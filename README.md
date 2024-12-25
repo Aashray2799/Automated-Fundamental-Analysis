@@ -7,7 +7,7 @@ View the file `StockRatings-04.05.22.csv` as an example of the output of this pr
 
 # How to Run the Code
 
-  1. Clone the repository `git clone https://github.com/faizancodes/Automated-Fundamental-Analysis.git`
+  1. Clone the repository `git clone https://github.com/Aashray2799/Automated-Fundamental-Analysis.git`
   2. Run `cd Automated-Fundamental-Analysis`
   3. Download all the dependencies `pip install -r requirements.txt` 
   4. Run `stockgrader.py`, this will scrape data from all 8300+ stocks on Finviz.com and grade each of them out of 100
