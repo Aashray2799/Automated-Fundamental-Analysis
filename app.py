@@ -17,9 +17,10 @@ st.header('Stock Market Analysis')
 user_input_file = st.file_uploader("Upload the StockRatings CSV file", type=["csv"])
 
 if user_input_file is not None:
-     
-     # Load the csv file in a dataframe
-     df = pd.read_csv(user_input_file)
+    df = pd.read_csv(user_input_file)
+else:
+    df = pd.read_csv("StockRatings-04.05.22.csv")  # <-- Make sure this matches your uploaded file name
+
 
      st.dataframe(df)
 
