@@ -83,4 +83,4 @@ def plot_dist(df, ticker, sector, _filter, metric, metric_val, fig_size = (20,10
         if int(p.get_x()) in range(int(bin_to_color - diff), int(bin_to_color + diff)):
             p.set_color('crimson')
 
-    return fig, subheader, md replace it or do whatever u want to
+    return fig, subheader, md
