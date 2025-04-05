@@ -119,6 +119,49 @@ if ticker in df['Ticker'].values and grading_metric in df.columns:
 
     values = grading_df[grading_metric].dropna()
     mean_val = values.mean()
+    grade_map = {
+    'A+': 10, 'A': 9, 'A-': 8,
+    'B+': 7, 'B': 6, 'B-': 5,
+    'C+': 4, 'C': 3, 'C-': 2,
+    'D+': 1, 'D': 0,
+    'D-': -1, 'F': -2
+}
+
+raw_values = grading_df[grading_metric].dropna()
+
+# Check if it's a letter grade column
+if raw_values.dtype == 'object':
+    values = raw_values.map(grade_map)
+    stock_val = grade_map.get(stock[grading_metric], None)
+else:
+    values = raw_values
+    stock_val = stock[grading_metric]
+
+if stock_val is not None:
+    mean_val = values.mean()
+    p90_val = values.quantile(0.9)
+    std_val = values.std()
+    change_val = std_val / 3
+
+    st.markdown(f"""
+    ```
+    {group} {grading_metric} Avg: {mean_val:.2f}
+    90th Percentile: {p90_val:.3f}
+    Change: {change_val:.4f}
+    ```
+    """)
+
+    fig3, ax3 = plt.subplots()
+    sns.histplot(values, kde=True, bins=25, ax=ax3, color='skyblue')
+    ax3.axvline(mean_val, color='blue', linestyle='--', label='Mean')
+    ax3.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
+    ax3.axvline(stock_val, color='red', linestyle='-', label=ticker)
+    ax3.set_title(f"{grading_metric} Distribution in {group} {grading_scope}")
+    ax3.legend()
+    st.pyplot(fig3)
+else:
+    st.warning("⚠️ Could not convert selected grade into a number for grading.")
+
     p90_val = values.quantile(0.9)
     std_val = values.std()
     change_val = std_val / 3
