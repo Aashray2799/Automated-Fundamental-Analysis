@@ -109,6 +109,13 @@ grading_scope = st.radio("Compare within:", ["Sector", "Industry"], horizontal=T
 if ticker in df['Ticker'].values:
     group_val = stock[grading_scope]
     df_scope = df[df[grading_scope] == group_val]
+
+    # Ensure the selected metric exists in the dataset
+    if grading_metric not in df_scope.columns:
+        st.error(f"❌ The selected metric '{grading_metric}' is not available in the dataset.")
+        st.write("📋 Available columns:", df_scope.columns.tolist())
+        st.stop()
+
     values = df_scope[grading_metric].dropna()
 
     # Compute grading numbers
@@ -139,6 +146,7 @@ if ticker in df['Ticker'].values:
 
 st.markdown("---")
 st.caption("📈 Built with Python, Streamlit, and data from Finviz.com")
+
 
 
 
