@@ -55,11 +55,11 @@ if ticker in df['Ticker'].values:
     metric_options = ['Overall Rating', 'Valuation', 'Profitability', 'Growth', 'Performance']
     available_metrics = [m for m in metric_options if m in df.columns]
 
-    st.markdown("### 📈 Analyze a Metric")
-    selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
-    analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
-    group = stock[analysis_scope]
-    scoped_df = df[df[analysis_scope] == group]
+st.markdown("### 📈 Analyze a Metric")
+selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
+analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
+group = stock[analysis_scope]
+scoped_df = df[df[analysis_scope] == group]
 
     # Plot distribution
     fig, ax = plt.subplots()
