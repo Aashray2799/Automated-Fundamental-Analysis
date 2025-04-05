@@ -3,21 +3,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# --- Streamlit Config ---
+# --- Set wide layout ---
 st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
-
-# --- Load Data ---
-try:
-    df = pd.read_csv("../StockRatings-04.05.22.csv")
-  # Adjust path for Streamlit Cloud
-except:
-    st.error("❌ Could not load StockRatings-04.05.22.csv. Please check file path.")
-    st.stop()
 
 # --- App Title ---
 st.title("📊 Automated Fundamental Analysis")
 
-# --- Intro Section ---
+# --- Intro Description ---
 st.markdown("""
 Welcome to the **Automated Fundamental Analysis** web app!
 
@@ -30,14 +22,19 @@ This Python program rates **8,300+ stocks** out of 100 based on:
 
 Ratings are calculated **relative to their sector** using data scraped from **Finviz.com**.
 
----
-
-📁 You can view the file `StockRatings-04.05.22.csv` as the output of this analysis engine.
+📁 The file `StockRatings-04.05.22.csv` is the output of this analysis engine.
 """)
 
 st.markdown("---")
 
-# --- Stock Ticker Input ---
+# --- Load CSV file ---
+try:
+    df = pd.read_csv("StockRatings-04.05.22.csv")
+except Exception as e:
+    st.error(f"❌ Could not load StockRatings-04.05.22.csv.\n\nError: {e}")
+    st.stop()
+
+# --- Ticker Input ---
 ticker_input = st.text_input("🔎 Enter a Stock Ticker Symbol", value="AAPL").upper()
 
 if ticker_input in df['Ticker'].values:
@@ -61,7 +58,6 @@ if ticker_input in df['Ticker'].values:
     metric = st.selectbox("Select a Metric", ["Overall Rating", "Valuation", "Profitability", "Growth", "Performance"])
     scope = st.radio("Compare within:", ["Sector", "Industry"])
     filter_col = stock[scope]
-
     filtered_df = df[df[scope] == filter_col]
 
     st.markdown(f"### {ticker_input} {metric}: **{stock[metric]}**")
@@ -97,3 +93,4 @@ st.pyplot(fig2)
 
 st.markdown("---")
 st.caption("Built with ❤️ using Python and Streamlit | Data Source: Finviz.com")
+
