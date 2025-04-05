@@ -96,7 +96,8 @@ The grading system compares a stock's metric within its **sector or industry** a
 - 📉 Change = (Std. Dev / 3)
 """)
 
-grading_metric = st.selectbox("Select Metric for Grading Breakdown", available_metrics, key="grading")
+numeric_metrics = df.select_dtypes(include='number').columns.tolist()
+grading_metric = st.selectbox("Select Metric for Grading Breakdown", numeric_metrics, key="grading")
 grading_scope = st.radio("Grading Scope", ["Sector", "Industry"], horizontal=True)
 
 if ticker in df['Ticker'].values and grading_metric in df.columns:
