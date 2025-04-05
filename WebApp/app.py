@@ -1,154 +1,128 @@
+
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Page config
+# Streamlit config
 st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 
-# Title and Intro
+# Title & Intro
 st.title("📊 Automated Fundamental Analysis")
 
 st.markdown("""
-This Python program rates **8,300+ stocks** out of 100 based on:
+This program rates **8,300+ stocks** based on numerical metrics like valuation, profitability, growth, and price performance, all relative to their **sector**.
 
-- 📉 **Valuation**
-- 💰 **Profitability**
-- 🚀 **Growth**
-- 📈 **Price Performance**
-
-Ratings are calculated **relative to their sector** using Finviz.com data.
+Data source: Finviz.com  
+Example dataset: `StockRatings-04.05.22.csv`
 """)
 
-# Load Data
+# Load dataset
 try:
     df = pd.read_csv("StockRatings-04.05.22.csv")
 except Exception as e:
-    st.error(f"❌ Could not load StockRatings-04.05.22.csv\n\nError: {e}")
+    st.error(f"❌ Could not load dataset.\n\nError: {e}")
+    st.stop()
+
+# Sidebar column preview
+st.sidebar.subheader("📋 Columns in Dataset")
+st.sidebar.write(df.columns.tolist())
+
+# Identify usable metrics
+numeric_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+excluded = ["Price", "Market Cap"]
+metric_cols = [col for col in numeric_cols if col not in excluded]
+
+if not metric_cols:
+    st.error("❌ No usable numeric columns found in the dataset for analysis.")
     st.stop()
 
 st.markdown("---")
 
-# Ticker input
-ticker = st.text_input("Enter a Ticker Symbol", value="AAPL").upper()
+# --- Ticker Section ---
+ticker = st.text_input("Enter a stock ticker", value="AAPL").upper()
 
 if ticker in df['Ticker'].values:
     stock = df[df['Ticker'] == ticker].iloc[0]
 
-    # Company Info
     st.subheader(f"{stock['Company']} ({stock['Ticker']})")
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Price", f"${stock['Price']}")
     col2.metric("Market Cap", f"{stock['Market Cap']}B")
-    col3.metric("Overall Rating", stock['Overall Rating'])
+    col3.metric("Overall Rating", stock.get("Overall Rating", "N/A"))
 
     col4, col5 = st.columns(2)
     col4.metric("Sector", stock['Sector'])
     col5.metric("Industry", stock['Industry'])
 
-    st.markdown("### Pick a metric to analyze")
-    metric = st.selectbox("Metric", ["Overall Rating", "Valuation", "Profitability", "Growth", "Performance"])
+    st.markdown("### 🔍 Analyze Metric Within Sector or Industry")
+    selected_metric = st.selectbox("Select Metric", metric_cols)
+    scope = st.radio("Compare within:", ["Sector", "Industry"])
+    group = stock[scope]
+    scoped_df = df[df[scope] == group]
 
-    st.markdown("### Analyze by")
-    analysis_scope = st.radio("Choose comparison scope:", ["Sector", "Industry"])
-    scope_value = stock[analysis_scope]
-    scoped_df = df[df[analysis_scope] == scope_value]
-
-    st.markdown(f"### {ticker} {metric}: {stock[metric]}")
-    st.markdown(f"Distribution of {metric} values in the {scope_value} {analysis_scope}")
-
+    st.markdown(f"**{ticker} {selected_metric}: {stock[selected_metric]}**")
     fig, ax = plt.subplots()
-    sns.histplot(scoped_df[metric], kde=True, ax=ax)
-    ax.axvline(stock[metric], color='red', linestyle='--', label='Selected Stock')
+    sns.histplot(scoped_df[selected_metric], kde=True, ax=ax)
+    ax.axvline(stock[selected_metric], color='red', linestyle='--', label='Selected Stock')
+    ax.set_title(f"{selected_metric} Distribution in {group} {scope}")
     ax.legend()
     st.pyplot(fig)
 
 else:
-    st.info("Enter a valid ticker from the dataset to see results.")
+    st.warning("Enter a valid ticker from the dataset.")
 
-# Sector vs. Sector comparison
+# --- Sector Comparison ---
 st.markdown("---")
-st.header("🏆 Compare Metrics Between Sectors")
+st.header("📊 Compare Metrics Between Sectors")
 
 sectors = sorted(df['Sector'].dropna().unique())
-sector1 = st.selectbox("Select a Sector", sectors, key="sector1")
-sector2 = st.selectbox("Select a Sector to Compare", sectors, index=1 if sectors[0] == sector1 else 0, key="sector2")
-compare_metric = st.selectbox("Select a Metric", ["Overall Rating", "Valuation", "Profitability", "Growth", "Performance"])
+sector1 = st.selectbox("Select Sector 1", sectors)
+sector2 = st.selectbox("Select Sector 2", sectors, index=1 if sectors[0] == sector1 else 0)
+compare_metric = st.selectbox("Metric to Compare", metric_cols)
 
 df1 = df[df['Sector'] == sector1]
 df2 = df[df['Sector'] == sector2]
 
 fig2, ax2 = plt.subplots()
-sns.kdeplot(df1[compare_metric], fill=True, label=sector1, alpha=0.5)
-sns.kdeplot(df2[compare_metric], fill=True, label=sector2, alpha=0.5)
+sns.kdeplot(df1[compare_metric], fill=True, alpha=0.5, label=sector1)
+sns.kdeplot(df2[compare_metric], fill=True, alpha=0.5, label=sector2)
 ax2.set_title(f"{compare_metric} Distribution: {sector1} vs {sector2}")
 ax2.legend()
 st.pyplot(fig2)
 
-# Grading system
+# --- Grading System ---
 st.markdown("---")
 st.header("📘 Grading System")
 
 st.markdown("""
-The grading system used in this program is based on the normal distribution of values for a certain metric within a sector.
+Grading is based on how a stock's metric compares to others in its sector or industry:
 
-For example, to grade the **Net Margin** of a stock in the Technology sector, we look at the net margins of all stocks in that sector and determine where this stock lies in the distribution.
-
-We calculate:
-- 📊 **Average (Mean)**
+- 📊 **Mean**
 - 🏁 **90th Percentile**
-- 🔁 **Change** = (Standard Deviation ÷ 3)
-
-This helps assign a rating based on relative performance — just like a report card.
+- 🔁 **Change** = Std. Dev ÷ 3
 """)
 
-grading_metric = st.selectbox("Select Metric for Grading Breakdown", ["Valuation", "Profitability", "Growth", "Performance", "Overall Rating"])
-grading_scope = st.radio("Compare within:", ["Sector", "Industry"], horizontal=True)
+grading_metric = st.selectbox("Grading Metric", metric_cols, key="grading_metric")
+grading_scope = st.radio("Grading Scope", ["Sector", "Industry"], horizontal=True)
 
 if ticker in df['Ticker'].values:
-    group_val = stock[grading_scope]
-    df_scope = df[df[grading_scope] == group_val]
+    grading_group = stock[grading_scope]
+    grading_df = df[df[grading_scope] == grading_group]
 
-    # Ensure the selected metric exists in the dataset
-    if grading_metric not in df_scope.columns:
-        st.error(f"❌ The selected metric '{grading_metric}' is not available in the dataset.")
-        st.write("📋 Available columns:", df_scope.columns.tolist())
-        st.stop()
+    if grading_metric in grading_df.columns:
+        values = grading_df[grading_metric].dropna()
+        mean_val = values.mean()
+        p90_val = values.quantile(0.9)
+        std_val = values.std()
+        change_val = std_val / 3
+        stock_val = stock[grading_metric]
 
-    values = df_scope[grading_metric].dropna()
-
-    # Compute grading numbers
-    mean_val = values.mean()
-    p90_val = values.quantile(0.9)
-    std_val = values.std()
-    change_val = std_val / 3
-    stock_val = stock[grading_metric]
-
-    # Display values like your README screenshot
-    st.markdown(f"""
-    ```
-    {group_val} {grading_metric} Avg: {mean_val:.2f}
-    90th Percentile: {p90_val:.3f}
-    Change: {change_val:.4f}
-    ```
-    """)
-
-    # Plot
-    fig3, ax3 = plt.subplots()
-    sns.histplot(values, kde=True, bins=25, ax=ax3, color='skyblue')
-    ax3.axvline(mean_val, color='blue', linestyle='--', label='Mean')
-    ax3.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
-    ax3.axvline(stock_val, color='red', linestyle='-', label=f'{ticker}')
-    ax3.set_title(f"{grading_metric} Distribution in {group_val} {grading_scope}")
-    ax3.legend()
-    st.pyplot(fig3)
-
-st.markdown("---")
-st.caption("📈 Built with Python, Streamlit, and data from Finviz.com")
-
-
-
+        st.markdown(f"""
+        ```
+        {grading_group} {_
 
 
 
