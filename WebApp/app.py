@@ -14,7 +14,8 @@ import utils as ut
 st.set_page_config(page_title="Stock Analysis", page_icon="📈", layout="centered")
 st.header('Stock Market Analysis')
 
-user_input_file = st.file_uploader("Upload the StockRatings CSV file", type=["csv"])
+user_input_file = st.file_uploader("df = pd.read_csv("StockRatings-04.05.22.csv")
+", type=["csv"])
 
 if user_input_file is not None:
      
