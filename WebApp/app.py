@@ -135,4 +135,4 @@ if ticker in df['Ticker'].values and grading_metric in df.columns:
     st.pyplot(fig3)
 
 st.markdown("---")
-st.caption("Built with Streamlit | Data Source: Finviz.com")
+st.caption("Built with Streamlit | Data Source: Finviz.com") WHICH LINE
