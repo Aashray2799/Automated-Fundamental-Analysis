@@ -89,5 +89,59 @@ st.pyplot(fig2)
 
 st.markdown("---")
 st.caption("📈 Built with Python, Streamlit, and data from Finviz.com")
+# --- Grading System Section ---
+st.markdown("---")
+st.header("📘 Grading System")
+
+st.markdown("""
+The grading system used in this program is based on the normal distribution of values for a certain metric within a sector or industry.
+
+For example, if we want to grade the **Net Margin** of a stock in the **Technology** sector, we look at the net margins of all the stocks in that sector and compare our stock's value to this distribution.
+
+We calculate:
+- 📊 **Average (Mean)** of the metric
+- 🏁 **90th Percentile** (top performers)
+- 🔁 **Change value** = Standard deviation ÷ 3
+
+This allows us to understand where a stock sits relative to its peers.
+""")
+
+# --- Metric Grading Breakdown ---
+grading_metric = st.selectbox("Select Metric for Grading Visual", ["Valuation", "Profitability", "Growth", "Performance", "Overall Rating"])
+grading_scope = st.radio("Grade within:", ["Sector", "Industry"], horizontal=True)
+
+if ticker in df['Ticker'].values:
+    group_value = stock[grading_scope]
+    scoped_df = df[df[grading_scope] == group_value]
+    values = scoped_df[grading_metric].dropna()
+
+    # Grading stats
+    mean_val = values.mean()
+    p90_val = values.quantile(0.9)
+    std_dev = values.std()
+    change_val = std_dev / 3
+    stock_val = stock[grading_metric]
+
+    # Grading display like README
+    st.markdown(f"""
+    **{group_value} {grading_metric} Stats:**  
+    - Average: `{mean_val:.2f}`  
+    - 90th Percentile: `{p90_val:.3f}`  
+    - Change: `{change_val:.4f}`  
+    - Stock’s {grading_metric}: `{stock_val:.2f}`
+    """)
+
+    # Plot
+    fig, ax = plt.subplots()
+    sns.histplot(values, kde=True, bins=25, ax=ax)
+    ax.axvline(mean_val, color='blue', linestyle='--', label='Mean')
+    ax.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
+    ax.axvline(stock_val, color='red', linestyle='-', label=f"{ticker}")
+    ax.set_title(f"{grading_metric} Distribution in {group_value} {grading_scope}")
+    ax.legend()
+    st.pyplot(fig)
+else:
+    st.info("Enter a valid ticker to view grading visuals.")
+
 
 
