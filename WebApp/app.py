@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load ratings CSV
-df = pd.read_csv("StockRatings-04.05.22.csv")
+df = pd.read_csv("../StockRatings-04.05.22.csv")
 
 st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 
