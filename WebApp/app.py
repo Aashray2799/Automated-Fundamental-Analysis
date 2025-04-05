@@ -296,4 +296,4 @@ if user_input_file is not None:
      for i, _metric in enumerate(['Perf Year', 'Perf YTD', 'Volatility M']):
           perf_fig, perf_subheader, perf_md = ut.plot_dist(df, ticker, sector=(filter_by=='Sector'), _filter=row[filter_by].values[0], metric=_metric, metric_val=row[_metric].values[0], fig_size=(35, 25), show_ticker=False, show_subheader=False)
           perf_cols2[i].subheader(perf_subheader)
-          perf_cols2[i].pyplot(perf_fig)
+          perf_cols2[i].pyplot(perf_fig) 
