@@ -6,10 +6,9 @@ import seaborn as sns
 # Page config
 st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 
-# Title
+# Title and Intro
 st.title("📊 Automated Fundamental Analysis")
 
-# Intro
 st.markdown("""
 This Python program rates **8,300+ stocks** out of 100 based on:
 
@@ -70,7 +69,7 @@ else:
 
 # Sector vs. Sector comparison
 st.markdown("---")
-st.header("Select two Sectors and compare a metric")
+st.header("🏆 Compare Metrics Between Sectors")
 
 sectors = sorted(df['Sector'].dropna().unique())
 sector1 = st.selectbox("Select a Sector", sectors, key="sector1")
@@ -83,118 +82,64 @@ df2 = df[df['Sector'] == sector2]
 fig2, ax2 = plt.subplots()
 sns.kdeplot(df1[compare_metric], fill=True, label=sector1, alpha=0.5)
 sns.kdeplot(df2[compare_metric], fill=True, label=sector2, alpha=0.5)
-ax2.set_title(f"{compare_metric} Comparison: {sector1} vs {sector2}")
+ax2.set_title(f"{compare_metric} Distribution: {sector1} vs {sector2}")
 ax2.legend()
 st.pyplot(fig2)
 
+# Grading system
+st.markdown("---")
+st.header("📘 Grading System")
+
+st.markdown("""
+The grading system used in this program is based on the normal distribution of values for a certain metric within a sector.
+
+For example, to grade the **Net Margin** of a stock in the Technology sector, we look at the net margins of all stocks in that sector and determine where this stock lies in the distribution.
+
+We calculate:
+- 📊 **Average (Mean)**
+- 🏁 **90th Percentile**
+- 🔁 **Change** = (Standard Deviation ÷ 3)
+
+This helps assign a rating based on relative performance — just like a report card.
+""")
+
+grading_metric = st.selectbox("Select Metric for Grading Breakdown", ["Valuation", "Profitability", "Growth", "Performance", "Overall Rating"])
+grading_scope = st.radio("Compare within:", ["Sector", "Industry"], horizontal=True)
+
+if ticker in df['Ticker'].values:
+    group_val = stock[grading_scope]
+    df_scope = df[df[grading_scope] == group_val]
+    values = df_scope[grading_metric].dropna()
+
+    # Compute grading numbers
+    mean_val = values.mean()
+    p90_val = values.quantile(0.9)
+    std_val = values.std()
+    change_val = std_val / 3
+    stock_val = stock[grading_metric]
+
+    # Display values like your README screenshot
+    st.markdown(f"""
+    ```
+    {group_val} {grading_metric} Avg: {mean_val:.2f}
+    90th Percentile: {p90_val:.3f}
+    Change: {change_val:.4f}
+    ```
+    """)
+
+    # Plot
+    fig3, ax3 = plt.subplots()
+    sns.histplot(values, kde=True, bins=25, ax=ax3, color='skyblue')
+    ax3.axvline(mean_val, color='blue', linestyle='--', label='Mean')
+    ax3.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
+    ax3.axvline(stock_val, color='red', linestyle='-', label=f'{ticker}')
+    ax3.set_title(f"{grading_metric} Distribution in {group_val} {grading_scope}")
+    ax3.legend()
+    st.pyplot(fig3)
+
 st.markdown("---")
 st.caption("📈 Built with Python, Streamlit, and data from Finviz.com")
-# --- Grading System Section ---
-st.markdown("---")
-st.header("📘 Grading System")
 
-st.markdown("""
-The grading system used in this program is based on the normal distribution of values for a certain metric within a sector or industry.
-
-For example, if we want to grade the **Net Margin** of a stock in the **Technology** sector, we look at the net margins of all the stocks in that sector and compare our stock's value to this distribution.
-
-We calculate:
-- 📊 **Average (Mean)** of the metric
-- 🏁 **90th Percentile** (top performers)
-- 🔁 **Change value** = Standard deviation ÷ 3
-
-This allows us to understand where a stock sits relative to its peers.
-""")
-
-# --- Metric Grading Breakdown ---
-grading_metric = st.selectbox("Select Metric for Grading Visual", ["Valuation", "Profitability", "Growth", "Performance", "Overall Rating"])
-grading_scope = st.radio("Grade within:", ["Sector", "Industry"], horizontal=True)
-
-if ticker in df['Ticker'].values:
-    group_value = stock[grading_scope]
-    scoped_df = df[df[grading_scope] == group_value]
-    values = scoped_df[grading_metric].dropna()
-
-    # Grading stats
-    mean_val = values.mean()
-    p90_val = values.quantile(0.9)
-    std_dev = values.std()
-    change_val = std_dev / 3
-    stock_val = stock[grading_metric]
-
-    # Grading display like README
-    st.markdown(f"""
-    **{group_value} {grading_metric} Stats:**  
-    - Average: `{mean_val:.2f}`  
-    - 90th Percentile: `{p90_val:.3f}`  
-    - Change: `{change_val:.4f}`  
-    - Stock’s {grading_metric}: `{stock_val:.2f}`
-    """)
-
-    # Plot
-    fig, ax = plt.subplots()
-    sns.histplot(values, kde=True, bins=25, ax=ax)
-    ax.axvline(mean_val, color='blue', linestyle='--', label='Mean')
-    ax.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
-    ax.axvline(stock_val, color='red', linestyle='-', label=f"{ticker}")
-    ax.set_title(f"{grading_metric} Distribution in {group_value} {grading_scope}")
-    ax.legend()
-    st.pyplot(fig)
-else:
-    st.info("Enter a valid ticker to view grading visuals.")
-    # --- Grading System Section ---
-st.markdown("---")
-st.header("📘 Grading System")
-
-st.markdown("""
-The grading system used in this program is based on the normal distribution of values for a certain metric within a sector or industry.
-
-For example, if we want to grade the **Net Margin** of a stock in the **Technology** sector, we look at the net margins of all the stocks in that sector and compare our stock's value to this distribution.
-
-We calculate:
-- 📊 **Average (Mean)** of the metric
-- 🏁 **90th Percentile** (top performers)
-- 🔁 **Change value** = Standard deviation ÷ 3
-
-This allows us to understand where a stock sits relative to its peers.
-""")
-
-# --- Metric Grading Breakdown ---
-grading_metric = st.selectbox("Select Metric for Grading Visual", ["Valuation", "Profitability", "Growth", "Performance", "Overall Rating"])
-grading_scope = st.radio("Grade within:", ["Sector", "Industry"], horizontal=True)
-
-if ticker in df['Ticker'].values:
-    group_value = stock[grading_scope]
-    scoped_df = df[df[grading_scope] == group_value]
-    values = scoped_df[grading_metric].dropna()
-
-    # Grading stats
-    mean_val = values.mean()
-    p90_val = values.quantile(0.9)
-    std_dev = values.std()
-    change_val = std_dev / 3
-    stock_val = stock[grading_metric]
-
-    # Grading display like README
-    st.markdown(f"""
-    **{group_value} {grading_metric} Stats:**  
-    - Average: `{mean_val:.2f}`  
-    - 90th Percentile: `{p90_val:.3f}`  
-    - Change: `{change_val:.4f}`  
-    - Stock’s {grading_metric}: `{stock_val:.2f}`
-    """)
-
-    # Plot
-    fig, ax = plt.subplots()
-    sns.histplot(values, kde=True, bins=25, ax=ax)
-    ax.axvline(mean_val, color='blue', linestyle='--', label='Mean')
-    ax.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
-    ax.axvline(stock_val, color='red', linestyle='-', label=f"{ticker}")
-    ax.set_title(f"{grading_metric} Distribution in {group_value} {grading_scope}")
-    ax.legend()
-    st.pyplot(fig)
-else:
-    st.info("Enter a valid ticker to view grading visuals.")
 
 
 
