@@ -8,7 +8,8 @@ st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 
 # --- Load Data ---
 try:
-    df = pd.read_csv("../StockRatings-04.05.22.csv")  # Adjust path for Streamlit Cloud
+    df = pd.read_csv("../StockRatings-04.05.22.csv")
+  # Adjust path for Streamlit Cloud
 except:
     st.error("❌ Could not load StockRatings-04.05.22.csv. Please check file path.")
     st.stop()
