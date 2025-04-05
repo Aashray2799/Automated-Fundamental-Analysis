@@ -1,110 +1,138 @@
-import matplotlib
-import pandas as pd
-from seaborn.relational import lineplot
 import streamlit as st
-import plotly.express as px
-from PIL import Image
-import numpy as np
-import seaborn as sns
+import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import rc
-import utils as ut
+import seaborn as sns
 
-st.set_page_config(page_title="Stock Analysis", page_icon="📈", layout="centered")
-st.header('Stock Market Analysis')
+# Set Streamlit layout
+st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 
-df = pd.read_csv("StockRatings-04.05.22.csv")
-st.dataframe(df)
+# Title
+st.title("📊 Automated Fundamental Analysis")
 
-st.subheader('Compare stats for each Sector')
+# Description
+st.markdown("""
+Analyze **8,000+ stocks** based on valuation, profitability, growth, and price performance—**relative to their sector**.
 
-remove_vals = ['Ticker', 'Sector', 'Company', 'Market Cap', 'Industry', 'Country', 'Earnings Date', 'Valuation Grade', 'Profitability Grade', 'Growth Grade', 'Performance Grade']
-selectable_values = [elem for elem in df.columns.tolist() if elem not in remove_vals]
+Data Source: Finviz  
+Dataset: `StockRatings-04.05.22.csv`
+""")
 
-values = st.selectbox('Select Values', selectable_values)
+# Load dataset
+try:
+    df = pd.read_csv("StockRatings-04.05.22.csv")
+except Exception as e:
+    st.error(f"❌ Could not load StockRatings-04.05.22.csv\n\n{e}")
+    st.stop()
 
-df = df[df[values] != '-']
-df[values] = pd.to_numeric(df[values], downcast="float")
+# Show columns in sidebar
+st.sidebar.subheader("📋 Available Columns")
+st.sidebar.write(df.columns.tolist())
 
-pivot_table = df.pivot_table(index='Sector', values=values, aggfunc=[np.median])
-pivot_table.reset_index(inplace=True)
-pivot_table.columns = ['Sector', f"Median {values}"]
-pivot_table = pivot_table.sort_values(by=f"Median {values}", ascending=False)
-pivot_table[f"Median {values}"] = pivot_table[f"Median {values}"].apply(lambda x: round(x, 1))
+# Validate key columns
+required_cols = ['Ticker', 'Company', 'Price', 'Market Cap', 'Sector', 'Industry', 'Overall Rating']
+missing = [col for col in required_cols if col not in df.columns]
+if missing:
+    st.error(f"❌ Missing required columns: {missing}")
+    st.stop()
 
-st.dataframe(pivot_table)
+# --- Ticker Analysis ---
+st.header("🔍 Ticker Lookup")
+ticker = st.text_input("Enter a Ticker Symbol", value="AAPL").upper()
 
-bar_plot = px.bar(pivot_table, x='Sector', y=f"Median {values}")
-bar_plot.update_xaxes(showgrid=False, zeroline=False)
-bar_plot.update_yaxes(showgrid=False, zeroline=False)
-st.plotly_chart(bar_plot)
+if ticker in df['Ticker'].values:
+    stock = df[df['Ticker'] == ticker].iloc[0]
 
-# Whisker Box Plot
-grouped = df.loc[:, ['Sector', values]].groupby(['Sector']).median().sort_values(by=values, ascending=False)
+    st.subheader(f"{stock['Company']} ({ticker})")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Price", f"${stock['Price']}")
+    col2.metric("Market Cap", f"{stock['Market Cap']}B")
+    col3.metric("Overall Rating", stock['Overall Rating'])
 
-fig = plt.figure(figsize=(25, 15))
-matplotlib.rcParams['axes.grid'] = True
-matplotlib.rcParams['savefig.transparent'] = True
+    col4, col5 = st.columns(2)
+    col4.metric("Sector", stock['Sector'])
+    col5.metric("Industry", stock['Industry'])
 
-custom_style = {'axes.labelcolor': 'white', 'xtick.color': 'white', 'ytick.color': 'white'}
-sns.set_style({'axes.grid': False})
-sns.set_style(rc=custom_style)
+    metric_options = ['Overall Rating', 'Valuation', 'Profitability', 'Growth', 'Performance']
+    available_metrics = [m for m in metric_options if m in df.columns]
 
-sns.boxplot(x=df['Sector'], y=df[values], order=grouped.index, showfliers=False)
-sns.set(font_scale=2)
-locs, labels = plt.xticks()
-plt.setp(labels, rotation=-45)
-st.pyplot(fig)
+    st.markdown("### 📈 Analyze a Metric")
+    selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
+    analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
+    group = stock[analysis_scope]
+    scoped_df = df[df[analysis_scope] == group]
 
-# Sector Distribution Plot
-st.markdown("***")
-st.subheader('Select two Sectors and compare a metric')
+    # Plot distribution
+    fig, ax = plt.subplots()
+    sns.histplot(scoped_df[selected_metric], kde=True, ax=ax)
+    ax.axvline(stock[selected_metric], color='red', linestyle='--', label=ticker)
+    ax.set_title(f"{selected_metric} Distribution in {group} {analysis_scope}")
+    ax.legend()
+    st.pyplot(fig)
+else:
+    st.warning("Ticker not found in dataset.")
 
-sector1 = st.selectbox('Select a Sector', sorted(set(df['Sector'])))
-sector2 = st.selectbox('Select a Sector to Compare', sorted(set(df['Sector']) - {sector1}))
+# --- Sector Comparison ---
+st.markdown("---")
+st.header("🏆 Compare Sectors")
 
-metric = st.selectbox('Select a Metric', selectable_values)
+sectors = sorted(df['Sector'].dropna().unique())
+sector1 = st.selectbox("Select Sector", sectors)
+sector2 = st.selectbox("Select a Sector to Compare", sectors, index=1 if sectors[0] == sector1 else 0)
 
-df = df[df[metric] != '-']
-df[metric] = pd.to_numeric(df[metric], downcast="float")
+comparison_metric = st.selectbox("Select a Metric", available_metrics, key="compare_metric")
 
-sector1_df = df[df['Sector'] == sector1]
-sector2_df = df[df['Sector'] == sector2]
+df1 = df[df['Sector'] == sector1]
+df2 = df[df['Sector'] == sector2]
 
-sector1_data = ut.remove_outliers(sector1_df, metric, 3.5)
-sector2_data = ut.remove_outliers(sector2_df, metric, 3.5)
+fig2, ax2 = plt.subplots()
+sns.kdeplot(df1[comparison_metric], fill=True, label=sector1, alpha=0.5)
+sns.kdeplot(df2[comparison_metric], fill=True, label=sector2, alpha=0.5)
+ax2.set_title(f"{comparison_metric} Distribution: {sector1} vs {sector2}")
+ax2.legend()
+st.pyplot(fig2)
 
-fig = plt.figure(figsize=(25, 15))
-matplotlib.rcParams['axes.grid'] = True
-matplotlib.rcParams['savefig.transparent'] = True
-sns.set_style({'axes.grid': False})
-sns.set_style(rc=custom_style)
+# --- Grading System ---
+st.markdown("---")
+st.header("📘 Grading System")
 
-sns.distplot(sector1_data, bins=10)
-sns.distplot(sector2_data, bins=10)
-plt.legend([sector1, sector2])
-st.pyplot(fig)
+st.markdown("""
+The grading system compares a stock's metric within its **sector or industry** and calculates:
 
-# Metric Scatter Plot
-st.markdown("***")
-st.subheader('Select two metrics to compare and find any correlations')
+- 📊 Mean of the group  
+- 🏁 90th Percentile  
+- 📉 Change = (Std. Dev / 3)
+""")
 
-metric1 = st.selectbox('Select x-axis metric', selectable_values)
-new_selectable_values = selectable_values.copy()
-new_selectable_values.remove(metric1)
-metric2 = st.selectbox('Select y-axis metric', new_selectable_values)
+grading_metric = st.selectbox("Select Metric for Grading Breakdown", available_metrics, key="grading")
+grading_scope = st.radio("Grading Scope", ["Sector", "Industry"], horizontal=True)
 
-df = ut.convert_col_to_float(df, metric1)
-df = ut.convert_col_to_float(df, metric2)
-df = ut.remove_outliers_2(df, metric1)
-df = ut.remove_outliers_2(df, metric2)
+if ticker in df['Ticker'].values and grading_metric in df.columns:
+    group = stock[grading_scope]
+    grading_df = df[df[grading_scope] == group]
 
-scatter_plot = px.scatter(df, x=metric1, y=metric2, color='Sector', trendline="ols", trendline_scope='overall', opacity=0.55)
-scatter_plot.update_xaxes(showgrid=False, zeroline=False)
-scatter_plot.update_yaxes(showgrid=False, zeroline=False)
-st.plotly_chart(scatter_plot)
+    values = grading_df[grading_metric].dropna()
+    mean_val = values.mean()
+    p90_val = values.quantile(0.9)
+    std_val = values.std()
+    change_val = std_val / 3
+    stock_val = stock[grading_metric]
 
-correlation_matrix = np.corrcoef(df[metric1], df[metric2])
-correlation_xy = correlation_matrix[0, 1]
-r_squared = round(correlation_xy**2, 3)
-st.subheader(f"R^2: {r_squared}")
+    st.markdown(f"""
+    ```
+    {group} {grading_metric} Avg: {mean_val:.2f}
+    90th Percentile: {p90_val:.3f}
+    Change: {change_val:.4f}
+    ```
+    """)
+
+    fig3, ax3 = plt.subplots()
+    sns.histplot(values, kde=True, bins=25, ax=ax3, color='skyblue')
+    ax3.axvline(mean_val, color='blue', linestyle='--', label='Mean')
+    ax3.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
+    ax3.axvline(stock_val, color='red', linestyle='-', label=ticker)
+    ax3.set_title(f"{grading_metric} Distribution in {group} {grading_scope}")
+    ax3.legend()
+    st.pyplot(fig3)
+
+st.markdown("---")
+st.caption("Built with Streamlit | Data Source: Finviz.com")
