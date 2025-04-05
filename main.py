@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Set layout
-st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
+st.set_page_config(page_title="Automated Fundamental Analysis", layout="centered")
 
 # Title & Description
 st.title("📊 Automated Fundamental Analysis")
