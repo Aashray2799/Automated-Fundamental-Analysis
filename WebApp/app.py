@@ -136,3 +136,4 @@ if ticker in df['Ticker'].values and grading_metric in df.columns:
 
 st.markdown("---")
 st.caption("Built with Streamlit | Data Source: Finviz.com")
+
