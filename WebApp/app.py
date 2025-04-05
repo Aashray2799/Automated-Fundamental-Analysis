@@ -134,6 +134,3 @@ if ticker in df['Ticker'].values and grading_metric in df.columns:
     ax3.legend()
     st.pyplot(fig3)
 
-st.markdown("---")
-st.caption("Built with Streamlit | Data Source: Finviz.com")
-
