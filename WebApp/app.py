@@ -17,7 +17,9 @@ st.header('Stock Market Analysis')
 df = pd.read_csv("StockRatings-04.05.22.csv")
 
 
-     st.dataframe(df)
+     df = pd.read_csv("StockRatings-04.05.22.csv")
+st.dataframe(df)
+
 
      st.subheader('Compare stats for each Sector')
 
