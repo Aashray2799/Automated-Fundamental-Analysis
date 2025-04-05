@@ -52,7 +52,14 @@ if ticker in df['Ticker'].values:
     col4.metric("Sector", stock['Sector'])
     col5.metric("Industry", stock['Industry'])
 
-    metric_options = ['Overall Rating', 'Valuation', 'Profitability', 'Growth', 'Performance']
+    metric_options = [
+    'Overall Rating', 
+    'Valuation Grade',
+    'Profitability Grade',
+    'Growth Grade',
+    'Performance Grade'
+]
+
     available_metrics = [m for m in metric_options if m in df.columns]
 
     st.markdown("### 📈 Analyze a Metric")
