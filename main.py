@@ -23,9 +23,6 @@ except Exception as e:
     st.error(f"❌ Could not load StockRatings-04.05.22.csv\n\n{e}")
     st.stop()
 
-# Sidebar Columns
-st.sidebar.subheader("📋 Available Columns")
-st.sidebar.write(df.columns.tolist())
 
 # Required Columns
 required_cols = ['Ticker', 'Company', 'Price', 'Market Cap', 'Sector', 'Industry', 'Overall Rating']
