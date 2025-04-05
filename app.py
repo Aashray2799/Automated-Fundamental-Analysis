@@ -1,48 +1,44 @@
-import streamlit as st
-import yfinance as yf
-import pandas as pd
-import matplotlib.pyplot as plt
+# --- Grading System ---
+st.markdown("---")
+st.header("📘 Grading System")
 
-st.set_page_config(page_title="Fundamental Analysis Web App", layout="wide")
+st.markdown("""
+The grading system compares a stock’s metric within its **sector or industry** and calculates:
 
-st.title("📊 Automated Fundamental Analysis")
-st.write("Enter a stock ticker below to get the latest fundamentals.")
+- 📊 **Mean** of that metric in the group  
+- 🏁 **90th Percentile**  
+- 📉 **Change** = (Standard Deviation / 3)  
+- 🔴 Red line shows your stock’s value
+""")
 
-ticker = st.text_input("Stock Ticker", value="AAPL").upper()
+grading_metric = st.selectbox("📐 Select Grading Metric", available_metrics, key="grading")
+grading_scope = st.radio("📊 Grading Scope", ["Sector", "Industry"], horizontal=True)
 
-if ticker:
-    try:
-        stock = yf.Ticker(ticker)
-        info = stock.info
+if ticker in df['Ticker'].values and grading_metric in df.columns:
+    group = stock[grading_scope]
+    grading_df = df[df[grading_scope] == group]
 
-        st.subheader(f"Company Overview: {info.get('shortName', 'N/A')}")
-        st.write(info.get("longBusinessSummary", "No summary available."))
+    values = grading_df[grading_metric].dropna()
+    mean_val = values.mean()
+    p90_val = values.quantile(0.9)
+    std_val = values.std()
+    change_val = std_val / 3
+    stock_val = stock[grading_metric]
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Market Cap", f"${info.get('marketCap', 0):,.0f}")
-        col2.metric("PE Ratio (TTM)", info.get("trailingPE", 'N/A'))
-        col3.metric("EPS (TTM)", info.get("trailingEps", 'N/A'))
+    st.markdown(f"""
+    ```
+    {group} {grading_metric} Avg: {mean_val:.2f}
+    90th Percentile: {p90_val:.3f}
+    Change: {change_val:.4f}
+    ```
+    """)
 
-        col4, col5, col6 = st.columns(3)
-        col4.metric("ROE", f"{info.get('returnOnEquity', 0) * 100:.2f}%")
-        col5.metric("Profit Margin", f"{info.get('profitMargins', 0) * 100:.2f}%")
-        col6.metric("Debt to Equity", info.get("debtToEquity", 'N/A'))
+    fig, ax = plt.subplots()
+    sns.histplot(values, kde=True, bins=25, ax=ax, color='skyblue')
+    ax.axvline(mean_val, color='blue', linestyle='--', label='Mean')
+    ax.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
+    ax.axvline(stock_val, color='red', linestyle='-', label=ticker)
+    ax.set_title(f"{grading_metric} Distribution in {group} {grading_scope}")
+    ax.legend()
+    st.pyplot(fig)
 
-        st.subheader("📈 Historical Revenue & Net Income")
-
-        financials = stock.financials.T
-        if not financials.empty and 'Total Revenue' in financials.columns and 'Net Income' in financials.columns:
-            income = financials[['Total Revenue', 'Net Income']].dropna()
-
-            st.dataframe(income)
-
-            fig, ax = plt.subplots()
-            income.plot(kind='bar', ax=ax)
-            ax.set_ylabel('Amount ($)')
-            ax.set_title('Revenue vs Net Income')
-            st.pyplot(fig)
-        else:
-            st.warning("Financial data not available for this stock.")
-
-    except Exception as e:
-        st.error(f"Something went wrong: {e}")
