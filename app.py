@@ -21,8 +21,7 @@ if user_input_file is not None:
 else:
     df = pd.read_csv("StockRatings-04.05.22.csv")  # <-- Make sure this matches your uploaded file name
 
-
-     st.dataframe(df)
+st.dataframe(df)
 
      st.subheader('Compare stats for each Sector')
 
