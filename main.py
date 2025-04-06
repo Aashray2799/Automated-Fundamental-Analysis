@@ -9,10 +9,10 @@ st.set_page_config(page_title="StockViz", layout="centered")
 # Title & Description
 st.title("📊 StockViz – Visualizing and Scoring Stock Insights")
 st.markdown("""
-Welcome to **StockViz**, a web app for analyzing and scoring 8,000+ U.S. stocks based on key financial metrics.
+Welcome to **StockViz** – your interactive dashboard for 📊 stock scoring and 📈 sector insights.
 """)
 st.markdown("""
-Powered by market data to help visualize how stocks compare in valuation, growth, and profitability. 
+Powered by public market data to show **how stocks compare** in **valuation**, **growth**, and **profitability**. 
 """)
 
 # Load dataset
