@@ -12,9 +12,7 @@ st.markdown("""
 Welcome to **StockViz**, a web app for analyzing and scoring 8,000+ U.S. stocks based on key financial metrics.
 """)
 st.markdown("""
-📂 View the file `StockRatings-04.05.22.csv` as an example of the output of this program.
-
-**Data Source**: Finviz  
+Powered by market data to help visualize how stocks compare in valuation, growth, and profitability. 
 """)
 
 # Load dataset
