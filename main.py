@@ -9,8 +9,10 @@ st.set_page_config(page_title="StockViz", layout="centered")
 # Title & Description
 st.title("📊 StockViz – Visualizing and Scoring Stock Insights")
 st.markdown("""
-Welcome to StockViz, an interactive app that lets you analyze and score 8,000+ U.S. stocks using key metrics:
-Valuation, Profitability, Growth, and Momentum – all evaluated in context of their sector and industry peers.
+st.markdown("""
+Welcome to **StockViz**, a web app for analyzing and scoring 8,000+ U.S. stocks based on key financial metrics.
+""")
+.
 
 📂 View the file `StockRatings-04.05.22.csv` as an example of the output of this program.
 
