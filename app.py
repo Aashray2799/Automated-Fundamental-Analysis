@@ -5,6 +5,36 @@ import seaborn as sns
 
 # Set Streamlit layout
 st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
+import requests
+from bs4 import BeautifulSoup
+
+@st.cache_data(ttl=3600)
+def fetch_data_from_finviz(pages=1):
+    headers = {"User-Agent": "Mozilla/5.0"}
+    base_url = "https://finviz.com/screener.ashx?v=111&f=idx_sp500"
+    
+    all_data = []
+
+    for page in range(pages):
+        url = f"{base_url}&r={page * 20 + 1}"
+        res = requests.get(url, headers=headers)
+        soup = BeautifulSoup(res.content, "html.parser")
+
+        table = soup.find("table", class_="screener-view-table")
+        rows = table.find_all("tr")[1:]
+
+        for row in rows:
+            cols = [td.text.strip() for td in row.find_all("td")]
+            if cols:
+                all_data.append(cols)
+
+    columns = [
+        "No", "Ticker", "Company", "Sector", "Industry", "Country",
+        "Market Cap", "P/E", "Price", "Change", "Volume"
+    ]
+
+    df = pd.DataFrame(all_data, columns=columns)
+    return df
 
 # Title
 st.title("📊 Automated Fundamental Analysis")
@@ -17,12 +47,18 @@ Data Source: Finviz
 Dataset: `StockRatings-04.05.22.csv`
 """)
 
-# Load dataset
+# 🔄 Refresh button to get new data from Finviz
+if st.button("🔄 Refresh Live Data"):
+    st.cache_data.clear()
+    st.experimental_rerun()
+
+# 🗂 Load fresh data from Finviz
 try:
-    df = pd.read_csv("StockRatings-04.05.22.csv")
+    df = fetch_data_from_finviz(pages=2)  # Loads 40 stocks (2 pages)
 except Exception as e:
-    st.error(f"❌ Could not load StockRatings-04.05.22.csv\n\n{e}")
+    st.error(f"❌ Failed to fetch data from Finviz:\n\n{e}")
     st.stop()
+
 
 # Show columns in sidebar
 st.sidebar.subheader("📋 Available Columns")
