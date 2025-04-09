@@ -93,10 +93,10 @@ available_metrics = [m for m in metric_options if m in df.columns]
 
 
 st.markdown("### 📈 Analyze a Metric")
-    selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
-    analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
-    group = stock[analysis_scope]
-    scoped_df = df[df[analysis_scope] == group]
+selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
+analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
+group = stock[analysis_scope]
+scoped_df = df[df[analysis_scope] == group]
 
     # Plot distribution
     fig, ax = plt.subplots()
