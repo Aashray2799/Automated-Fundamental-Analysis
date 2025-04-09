@@ -99,14 +99,14 @@ group = stock[analysis_scope]
 scoped_df = df[df[analysis_scope] == group]
 
     # Plot distribution
-    fig, ax = plt.subplots()
-    sns.histplot(scoped_df[selected_metric], kde=True, ax=ax)
-    ax.axvline(stock[selected_metric], color='red', linestyle='--', label=ticker)
-    ax.set_title(f"{selected_metric} Distribution in {group} {analysis_scope}")
-    ax.legend()
-    st.pyplot(fig)
+fig, ax = plt.subplots()
+sns.histplot(scoped_df[selected_metric], kde=True, ax=ax)
+ax.axvline(stock[selected_metric], color='red', linestyle='--', label=ticker)
+ax.set_title(f"{selected_metric} Distribution in {group} {analysis_scope}")
+ax.legend()
+st.pyplot(fig)
 else:
-    st.warning("Ticker not found in dataset.")
+st.warning("Ticker not found in dataset.")
 
 # --- Sector Comparison ---
 st.markdown("---")
