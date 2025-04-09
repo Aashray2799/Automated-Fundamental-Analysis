@@ -81,32 +81,29 @@ if ticker in df['Ticker'].values:
     st.subheader(f"{stock['Company']} ({ticker})")
     col1, col2, col3 = st.columns(3)
     col1.metric("Price", f"${stock['Price']}")
-    col2.metric("Market Cap", f"{stock['Market Cap']}B")
-    col3.metric("Overall Rating", stock['Overall Rating'])
+    col2.metric("Market Cap", f"{stock['Market Cap']}")
+    col3.metric("Overall Rating", stock.get('Overall Rating', 'N/A'))
 
     col4, col5 = st.columns(2)
     col4.metric("Sector", stock['Sector'])
     col5.metric("Industry", stock['Industry'])
 
-metric_options = ['Overall Rating', 'Valuation Grade', 'Profitability Grade', 'Growth Grade', 'Performance Grade']
-available_metrics = [m for m in metric_options if m in df.columns]
+    # Analysis block
+    st.markdown("### 📈 Analyze a Metric")
+    selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
+    analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
+    group = stock[analysis_scope]
+    scoped_df = df[df[analysis_scope] == group]
 
+    fig, ax = plt.subplots()
+    sns.histplot(scoped_df[selected_metric], kde=True, ax=ax)
+    ax.axvline(stock[selected_metric], color='red', linestyle='--', label=ticker)
+    ax.set_title(f"{selected_metric} Distribution in {group} {analysis_scope}")
+    ax.legend()
+    st.pyplot(fig)
 
-st.markdown("### 📈 Analyze a Metric")
-selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
-analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
-group = stock[analysis_scope]
-scoped_df = df[df[analysis_scope] == group]
-
-    # Plot distribution
-fig, ax = plt.subplots()
-sns.histplot(scoped_df[selected_metric], kde=True, ax=ax)
-ax.axvline(stock[selected_metric], color='red', linestyle='--', label=ticker)
-ax.set_title(f"{selected_metric} Distribution in {group} {analysis_scope}")
-ax.legend()
-st.pyplot(fig)
 else:
-st.warning("Ticker not found in dataset.")
+    st.warning("Ticker not found in dataset.")
 
 # --- Sector Comparison ---
 st.markdown("---")
