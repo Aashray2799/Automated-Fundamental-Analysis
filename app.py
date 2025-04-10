@@ -2,12 +2,30 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-# Set Streamlit layout
-st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 import requests
 from bs4 import BeautifulSoup
 
+# Set Streamlit layout
+st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
+
+# --- Function to compute Overall Rating ---
+def compute_overall_rating(df):
+    numeric_cols = ['P/E', 'Price', 'Change', 'Volume']
+    
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col].str.replace('%', '').str.replace(',', ''), errors='coerce')
+
+    df['Rating'] = (
+        df['P/E'].rank(pct=True, ascending=True) * 0.25 +
+        df['Price'].rank(pct=True, ascending=False) * 0.25 +
+        df['Change'].rank(pct=True, ascending=False) * 0.25 +
+        df['Volume'].rank(pct=True, ascending=False) * 0.25
+    )
+
+    df['Overall Rating'] = (df['Rating'] * 10).round(1)
+    return df
+
+# --- Fetch Data ---
 @st.cache_data(ttl=3600)
 def fetch_data_from_finviz(pages=1):
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -36,10 +54,9 @@ def fetch_data_from_finviz(pages=1):
     df = pd.DataFrame(all_data, columns=columns)
     return df
 
-# Title
+# --- Title ---
 st.title("📊 Automated Fundamental Analysis")
 
-# Description
 st.markdown("""
 Analyze **8,000+ stocks** based on valuation, profitability, growth, and price performance—**relative to their sector**.
 
@@ -47,24 +64,27 @@ Data Source: Finviz
 Dataset: `StockRatings-04.05.22.csv`
 """)
 
-# 🔄 Refresh button to get new data from Finviz
+# --- Refresh button ---
 if st.button("🔄 Refresh Live Data"):
     st.cache_data.clear()
     st.experimental_rerun()
 
-# 🗂 Load fresh data from Finviz
+# --- Load Data ---
 try:
     df = fetch_data_from_finviz(pages=2)  # Loads 40 stocks (2 pages)
+    df = compute_overall_rating(df)       # ✅ Add overall rating column
 except Exception as e:
     st.error(f"❌ Failed to fetch data from Finviz:\n\n{e}")
     st.stop()
 
-
-# Show columns in sidebar
+# --- Sidebar Columns ---
 st.sidebar.subheader("📋 Available Columns")
 st.sidebar.write(df.columns.tolist())
 
-# Validate key columns
+# ✅ Add available_metrics here
+available_metrics = ['P/E', 'Price', 'Change', 'Volume', 'Overall Rating']
+
+# --- Validate Required Columns ---
 required_cols = ['Ticker', 'Company', 'Price', 'Market Cap', 'Sector', 'Industry', 'Overall Rating']
 missing = [col for col in required_cols if col not in df.columns]
 if missing:
@@ -187,31 +207,5 @@ if stock_val is not None:
     st.pyplot(fig3)
 else:
     st.error("⚠️ Could not convert the selected stock's grade into a number.")
-
-    mean_val = values.mean()
-    p90_val = values.quantile(0.9)
-    std_val = values.std()
-    change_val = std_val / 3
-    stock_val = stock[grading_metric]
-
-    st.markdown(f"""
-    ```
-    {group} {grading_metric} Avg: {mean_val:.2f}
-    90th Percentile: {p90_val:.3f}
-    Change: {change_val:.4f}
-    ```
-    """)
-
-    fig3, ax3 = plt.subplots()
-    sns.histplot(values, kde=True, bins=25, ax=ax3, color='skyblue')
-    ax3.axvline(mean_val, color='blue', linestyle='--', label='Mean')
-    ax3.axvline(p90_val, color='green', linestyle='--', label='90th Percentile')
-    ax3.axvline(stock_val, color='red', linestyle='-', label=ticker)
-    ax3.set_title(f"{grading_metric} Distribution in {group} {grading_scope}")
-    ax3.legend()
-    st.pyplot(fig3)
-
-st.markdown("---")
-st.caption("Built with Streamlit | Data Source: Finviz.com")
 
 
