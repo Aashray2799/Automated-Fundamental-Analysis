@@ -15,14 +15,17 @@ def compute_overall_rating(df):
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col].str.replace('%', '').str.replace(',', ''), errors='coerce')
 
-    df['Rating'] = (
-        df['P/E'].rank(pct=True, ascending=True) * 0.25 +
-        df['Price'].rank(pct=True, ascending=False) * 0.25 +
-        df['Change'].rank(pct=True, ascending=False) * 0.25 +
-        df['Volume'].rank(pct=True, ascending=False) * 0.25
-    )
+    if all(col in df.columns for col in numeric_cols):
+        df['Rating'] = (
+            df['P/E'].rank(pct=True, ascending=True) * 0.25 +
+            df['Price'].rank(pct=True, ascending=False) * 0.25 +
+            df['Change'].rank(pct=True, ascending=False) * 0.25 +
+            df['Volume'].rank(pct=True, ascending=False) * 0.25
+        )
+        df['Overall Rating'] = (df['Rating'] * 10).round(1)
+    else:
+        df['Overall Rating'] = 5.0  # fallback default if any column is missing
 
-    df['Overall Rating'] = (df['Rating'] * 10).round(1)
     return df
 
 # --- Fetch Data ---
