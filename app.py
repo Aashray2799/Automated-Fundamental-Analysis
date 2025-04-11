@@ -155,18 +155,6 @@ elif len(sectors) == 1:
 else:
     st.warning("⚠️ No sector data available.")
 
-comparison_metric = st.selectbox("Select a Metric", available_metrics, key="compare_metric")
-
-df1 = df[df['Sector'] == sector1]
-df2 = df[df['Sector'] == sector2]
-
-fig2, ax2 = plt.subplots()
-sns.kdeplot(df1[comparison_metric], fill=True, label=sector1, alpha=0.5)
-sns.kdeplot(df2[comparison_metric], fill=True, label=sector2, alpha=0.5)
-ax2.set_title(f"{comparison_metric} Distribution: {sector1} vs {sector2}")
-ax2.legend()
-st.pyplot(fig2)
-
 # --- Grading System ---
 st.markdown("---")
 st.header("📘 Grading System")
