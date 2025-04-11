@@ -10,28 +10,18 @@ st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 
 # --- Function to compute Overall Rating ---
 def compute_overall_rating(df):
-    st.write("🔍 Columns after rating:", df.columns.tolist())
-st.write("📊 Sample data:", df[['Ticker', 'P/E', 'Price', 'Change', 'Volume', 'Overall Rating']].head())
- numeric_cols = ['P/E', 'Price', 'Change', 'Volume']
-
+    # First, convert numeric columns safely
+    numeric_cols = ['P/E', 'Price', 'Change', 'Volume']
     for col in numeric_cols:
-        # Clean and convert columns safely
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col].str.replace('%', '', regex=False).str.replace(',', '', regex=False), errors='coerce')
-        else:
-            df[col] = pd.NA
+        df[col] = pd.to_numeric(df[col].str.replace('%', '').str.replace(',', ''), errors='coerce')
 
-    if df[numeric_cols].isna().all().any():
-        st.warning("⚠️ One or more numeric columns are fully empty. Assigning fallback score.")
-        df['Overall Rating'] = 5.0
-    else:
-        df['Rating'] = (
-            df['P/E'].rank(pct=True, ascending=True) * 0.25 +
-            df['Price'].rank(pct=True, ascending=False) * 0.25 +
-            df['Change'].rank(pct=True, ascending=False) * 0.25 +
-            df['Volume'].rank(pct=True, ascending=False) * 0.25
-        )
-        df['Overall Rating'] = (df['Rating'] * 10).round(1)
+    # Normalize and score each column (example logic)
+    df['Valuation_Score'] = df['P/E'].rank(pct=True, ascending=True)  # lower P/E is better
+    df['Momentum_Score'] = df['Change'].rank(pct=True, ascending=False)  # higher change is better
+    df['Volume_Score'] = df['Volume'].rank(pct=True, ascending=False)
+
+    # Combine scores into an overall rating
+    df['Overall Rating'] = ((df['Valuation_Score'] + df['Momentum_Score'] + df['Volume_Score']) / 3).round(2)
 
     return df
 # --- Fetch Data ---
