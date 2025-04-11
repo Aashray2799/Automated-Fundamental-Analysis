@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import yfinance as yf
 
+# --- Tickers ---
 sp500_tickers = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META',
     'TSLA', 'BRK-B', 'JPM', 'JNJ', 'V',
@@ -11,15 +12,13 @@ sp500_tickers = [
     'CVX', 'MA', 'ABBV', 'PEP', 'LLY'
 ]
 
-# ✅ Paste this function right below
+# --- Fetch Data from Yahoo ---
 @st.cache_data(ttl=3600)
 def fetch_data_from_yahoo(tickers, batch_size=10):
     all_data = []
-
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i:i+batch_size]
         data = yf.Tickers(' '.join(batch)).tickers
-
         for ticker in batch:
             info = data[ticker].info
             try:
@@ -34,48 +33,40 @@ def fetch_data_from_yahoo(tickers, batch_size=10):
                     'Change': info.get('regularMarketChangePercent', 0) * 100,
                     'Volume': info.get('volume', '')
                 })
-            except Exception as e:
-                continue  # Skip broken ticker
-
-    df = pd.DataFrame(all_data)
-    return df
-
-
-
-# Set Streamlit layout
-st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
+            except Exception:
+                continue
+    return pd.DataFrame(all_data)
 
 # --- Compute Overall Rating ---
 def compute_overall_rating(df):
     numeric_cols = ['P/E', 'Price', 'Change', 'Volume']
     for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col].str.replace('%', '').str.replace(',', ''), errors='coerce')
+        df[col] = pd.to_numeric(df[col], errors='coerce')
     df['Valuation_Score'] = df['P/E'].rank(pct=True, ascending=True)
     df['Momentum_Score'] = df['Change'].rank(pct=True, ascending=False)
     df['Volume_Score'] = df['Volume'].rank(pct=True, ascending=False)
     df['Overall Rating'] = ((df['Valuation_Score'] + df['Momentum_Score'] + df['Volume_Score']) / 3).round(2)
     return df
 
-# --- Fetch Data ---
-@st.cache_data(ttl=3600)
-df = fetch_data_from_yahoo(sp500_tickers)
-:
-   # --- Title ---
-st.title("📊 Automated Fundamental Analysis")
-st.markdown("""
-Analyze **S&P 500 stocks** based on valuation, growth, and momentum — **relative to their sector**.
-""")
+# --- Page Setup ---
+st.set_page_config(page_title="📊 Automated Fundamental Analysis", layout="wide")
 
-# --- Refresh ---
+st.title("📊 Automated Fundamental Analysis")
+st.markdown("Analyze **S&P 500 stocks** based on valuation, growth, and momentum — relative to their sector.")
+
+# --- Refresh Button ---
 if st.button("🔄 Refresh Live Data"):
     st.cache_data.clear()
     st.experimental_rerun()
 
-# --- Load + Process Data ---
+# --- Load Data ---
 try:
     df = fetch_data_from_yahoo(sp500_tickers)
-
     df = compute_overall_rating(df)
+    df['Ticker'] = df['Ticker'].str.strip().str.upper()
+except Exception as e:
+    st.error(f"❌ Failed to fetch data from Yahoo Finance:\n\n{e}")
+    st.stop()
 
 # --- Sidebar ---
 st.sidebar.subheader("📋 Available Columns")
@@ -99,7 +90,7 @@ if ticker in df['Ticker'].values:
     col4.metric("Sector", stock['Sector'])
     col5.metric("Industry", stock['Industry'])
 
-    # Metric Analysis
+    # --- Metric Distribution ---
     st.markdown("### 📈 Analyze a Metric")
     selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
     analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
@@ -123,7 +114,6 @@ sectors = sorted(df['Sector'].dropna().unique().tolist())
 if len(sectors) >= 2:
     sector1 = st.selectbox("Select Sector", sectors)
     sector2 = st.selectbox("Select a Sector to Compare", sectors, index=1 if sectors[0] == sector1 else 0)
-
     comparison_metric = st.selectbox("Select a Metric", available_metrics, key="compare_metric")
 
     df1 = df[df['Sector'] == sector1]
@@ -135,7 +125,6 @@ if len(sectors) >= 2:
     ax2.set_title(f"{comparison_metric} Distribution: {sector1} vs {sector2}")
     ax2.legend()
     st.pyplot(fig2)
-
 elif len(sectors) == 1:
     st.info("Only one sector available.")
 else:
@@ -144,6 +133,7 @@ else:
 # --- Grading System ---
 st.markdown("---")
 st.header("📘 Grading System")
+
 grading_metric = st.selectbox("Select Metric for Grading Breakdown", available_metrics, key="grading")
 grading_scope = st.radio("Grading Scope", ["Sector", "Industry"], horizontal=True)
 
@@ -159,7 +149,6 @@ if ticker in df['Ticker'].values and grading_metric in df.columns:
     }
 
     raw_values = grading_df[grading_metric].dropna()
-
     if raw_values.dtype == 'object':
         values = raw_values.map(grade_map)
         stock_val = grade_map.get(stock[grading_metric], None)
