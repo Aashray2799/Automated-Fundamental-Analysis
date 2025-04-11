@@ -92,8 +92,8 @@ if missing:
 
 # --- Ticker Analysis ---
 st.header("🔍 Ticker Lookup")
-ticker = st.selectbox("Select a Ticker", df['Ticker'].unique())
-df['Ticker'] = df['Ticker'].str.strip().str.upper()
+df['Ticker'] = df['Ticker'].str.strip().str.upper()  # Clean first
+ticker = st.selectbox("Select a Ticker", df['Ticker'].unique())  # Then use
 st.sidebar.text("Tickers:\n" + "\n".join(df['Ticker'].dropna().unique().tolist()))
 if ticker in df['Ticker'].values:
     stock = df[df['Ticker'] == ticker].iloc[0]
@@ -129,9 +129,17 @@ else:
 st.markdown("---")
 st.header("🏆 Compare Sectors")
 
-sectors = sorted(df['Sector'].dropna().unique())
-sector1 = st.selectbox("Select Sector", sectors)
-sector2 = st.selectbox("Select a Sector to Compare", sectors, index=1 if sectors[0] == sector1 else 0)
+sectors = sorted(df['Sector'].dropna().unique().tolist())
+
+if len(sectors) >= 2:
+    sector1 = st.selectbox("Select Sector", sectors)
+    sector2 = st.selectbox("Select a Sector to Compare", sectors, index=1 if sectors[0] == sector1 else 0)
+elif len(sectors) == 1:
+    sector1 = sector2 = sectors[0]
+    st.info("Only one sector available in the data.")
+else:
+    st.warning("⚠️ No sector data available.")
+    st.stop()
 
 comparison_metric = st.selectbox("Select a Metric", available_metrics, key="compare_metric")
 
