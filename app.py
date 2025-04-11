@@ -70,7 +70,7 @@ if st.button("🔄 Refresh Live Data"):
 
 # --- Load Data ---
 try:
-    df = fetch_data_from_finviz(pages=2)  # Loads 40 stocks (2 pages)
+    df = fetch_data_from_finviz(pages=5)  # Loads 40 stocks (2 pages)
     df = compute_overall_rating(df)       # Compute rating
 except Exception as e:
     st.error(f"❌ Failed to fetch data from Finviz:\n\n{e}")
@@ -92,7 +92,7 @@ if missing:
 
 # --- Ticker Analysis ---
 st.header("🔍 Ticker Lookup")
-ticker = st.text_input("Enter a Ticker Symbol", value="AAPL").upper()
+ticker = st.selectbox("Select a Ticker", df['Ticker'].unique())
 df['Ticker'] = df['Ticker'].str.strip().str.upper()
 st.sidebar.text("Tickers:\n" + "\n".join(df['Ticker'].dropna().unique().tolist()))
 if ticker in df['Ticker'].values:
