@@ -71,6 +71,8 @@ except Exception as e:
 # --- Sidebar ---
 st.sidebar.subheader("📋 Available Columns")
 st.sidebar.write(df.columns.tolist())
+st.sidebar.markdown("---")
+st.sidebar.markdown("👨‍💻 Created by [Nikhil Konda](https://github.com/aashray27999)")
 
 available_metrics = ['P/E', 'Price', 'Change', 'Volume', 'Overall Rating']
 
