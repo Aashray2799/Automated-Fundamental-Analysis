@@ -51,6 +51,9 @@ def fetch_data_from_finviz(pages=1):
     ]
 
     df = pd.DataFrame(all_data, columns=columns)
+    if df.empty:
+    st.error("❌ No data fetched from Finviz. The site may have blocked scraping.")
+    st.stop()
     return df
 
 # --- Title ---
@@ -134,12 +137,23 @@ sectors = sorted(df['Sector'].dropna().unique().tolist())
 if len(sectors) >= 2:
     sector1 = st.selectbox("Select Sector", sectors)
     sector2 = st.selectbox("Select a Sector to Compare", sectors, index=1 if sectors[0] == sector1 else 0)
+
+    comparison_metric = st.selectbox("Select a Metric", available_metrics, key="compare_metric")
+
+    df1 = df[df['Sector'] == sector1]
+    df2 = df[df['Sector'] == sector2]
+
+    fig2, ax2 = plt.subplots()
+    sns.kdeplot(df1[comparison_metric], fill=True, label=sector1, alpha=0.5)
+    sns.kdeplot(df2[comparison_metric], fill=True, label=sector2, alpha=0.5)
+    ax2.set_title(f"{comparison_metric} Distribution: {sector1} vs {sector2}")
+    ax2.legend()
+    st.pyplot(fig2)
+
 elif len(sectors) == 1:
-    sector1 = sector2 = sectors[0]
-    st.info("Only one sector available in the data.")
+    st.info("Only one sector available in the data. Sector comparison is not possible.")
 else:
     st.warning("⚠️ No sector data available.")
-    st.stop()
 
 comparison_metric = st.selectbox("Select a Metric", available_metrics, key="compare_metric")
 
