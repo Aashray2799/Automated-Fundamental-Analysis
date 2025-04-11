@@ -73,12 +73,9 @@ if st.button("🔄 Refresh Live Data"):
 
 # --- Load + Process Data ---
 try:
-    df = fetch_data_from_finviz(pages=5)
+    df = fetch_data_from_yahoo(sp500_tickers)
+
     df = compute_overall_rating(df)
-    df['Ticker'] = df['Ticker'].str.strip().str.upper()
-except Exception as e:
-    st.error(f"❌ Failed to fetch data from Finviz:\n\n{e}")
-    st.stop()
 
 # --- Sidebar ---
 st.sidebar.subheader("📋 Available Columns")
