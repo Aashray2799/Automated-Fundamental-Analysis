@@ -52,8 +52,7 @@ def compute_overall_rating(df):
 st.set_page_config(page_title="⚡ StockSpark", layout="wide")
 
 st.title("⚡ StockSpark")
-st.markdown("Designed by Nikhil Konda — for anyone who wants to invest with clarity.
-Explore, compare, and score top S&P 500 stocks in seconds."**")
+st.markdown("Designed by Nikhil Konda — for anyone who wants to invest with clarity.Explore, compare, and score top S&P 500 stocks in seconds."**")
 
 # --- Refresh Button ---
 if st.button("🔄 Refresh Live Data"):
