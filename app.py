@@ -54,8 +54,8 @@ st.set_page_config(page_title="⚡ StockSpark", layout="wide")
 st.title("⚡ StockSpark")
 
 st.markdown("""
-Built by **Nikhil Konda** —  
-With tariffs and market uncertainty rising, it's the perfect time to cut through the noise.  
+🚀Built by **Nikhil Konda** —  
+In a time of tariffs and uncertainty, smart investing starts with fundamentals.  
 **Score and compare top U.S. stocks by value, growth, and momentum — instantly.**
 """)
 
