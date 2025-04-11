@@ -52,8 +52,8 @@ def fetch_data_from_finviz(pages=1):
 
     df = pd.DataFrame(all_data, columns=columns)
     if df.empty:
-    st.error("❌ No data fetched from Finviz. The site may have blocked scraping.")
-    st.stop()
+       st.error("❌ No data fetched from Finviz. The site may have blocked scraping.")
+       st.stop()
     return df
 
 # --- Title ---
