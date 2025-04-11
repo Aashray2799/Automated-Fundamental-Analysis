@@ -2,8 +2,45 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import requests
-from bs4 import BeautifulSoup
+import yfinance as yf
+
+sp500_tickers = [
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META',
+    'TSLA', 'BRK-B', 'JPM', 'JNJ', 'V',
+    'PG', 'XOM', 'UNH', 'NVDA', 'HD',
+    'CVX', 'MA', 'ABBV', 'PEP', 'LLY'
+]
+
+# ✅ Paste this function right below
+@st.cache_data(ttl=3600)
+def fetch_data_from_yahoo(tickers, batch_size=10):
+    all_data = []
+
+    for i in range(0, len(tickers), batch_size):
+        batch = tickers[i:i+batch_size]
+        data = yf.Tickers(' '.join(batch)).tickers
+
+        for ticker in batch:
+            info = data[ticker].info
+            try:
+                all_data.append({
+                    'Ticker': ticker,
+                    'Company': info.get('shortName', ''),
+                    'Sector': info.get('sector', ''),
+                    'Industry': info.get('industry', ''),
+                    'Market Cap': info.get('marketCap', ''),
+                    'P/E': info.get('trailingPE', ''),
+                    'Price': info.get('currentPrice', ''),
+                    'Change': info.get('regularMarketChangePercent', 0) * 100,
+                    'Volume': info.get('volume', '')
+                })
+            except Exception as e:
+                continue  # Skip broken ticker
+
+    df = pd.DataFrame(all_data)
+    return df
+
+
 
 # Set Streamlit layout
 st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
@@ -21,39 +58,9 @@ def compute_overall_rating(df):
 
 # --- Fetch Data ---
 @st.cache_data(ttl=3600)
-def fetch_data_from_finviz(pages=1):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    base_url = "https://finviz.com/screener.ashx?v=111&f=idx_sp500"
-    all_data = []
-
-    for page in range(pages):
-        url = f"{base_url}&r={page * 20 + 1}"
-        res = requests.get(url, headers=headers)
-        soup = BeautifulSoup(res.content, "html.parser")
-        table = soup.find("table", class_="screener-view-table")
-
-        if table is None:
-            st.error("❌ Finviz table not found. The site may have changed or blocked scraping.")
-            st.stop()
-
-        rows = table.find_all("tr")[1:]
-        for row in rows:
-            cols = [td.text.strip() for td in row.find_all("td")]
-            if cols:
-                all_data.append(cols)
-
-    columns = [
-        "No", "Ticker", "Company", "Sector", "Industry", "Country",
-        "Market Cap", "P/E", "Price", "Change", "Volume"
-    ]
-
-    df = pd.DataFrame(all_data, columns=columns)
-    if df.empty:
-        st.error("❌ No data fetched from Finviz.")
-        st.stop()
-    return df
-
-# --- Title ---
+df = fetch_data_from_yahoo(sp500_tickers)
+:
+   # --- Title ---
 st.title("📊 Automated Fundamental Analysis")
 st.markdown("""
 Analyze **S&P 500 stocks** based on valuation, growth, and momentum — **relative to their sector**.
