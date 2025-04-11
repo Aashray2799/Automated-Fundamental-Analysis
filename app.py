@@ -8,38 +8,35 @@ from bs4 import BeautifulSoup
 # Set Streamlit layout
 st.set_page_config(page_title="Automated Fundamental Analysis", layout="wide")
 
-# --- Function to compute Overall Rating ---
+# --- Compute Overall Rating ---
 def compute_overall_rating(df):
-    # First, convert numeric columns safely
     numeric_cols = ['P/E', 'Price', 'Change', 'Volume']
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col].str.replace('%', '').str.replace(',', ''), errors='coerce')
-
-    # Normalize and score each column (example logic)
-    df['Valuation_Score'] = df['P/E'].rank(pct=True, ascending=True)  # lower P/E is better
-    df['Momentum_Score'] = df['Change'].rank(pct=True, ascending=False)  # higher change is better
+    df['Valuation_Score'] = df['P/E'].rank(pct=True, ascending=True)
+    df['Momentum_Score'] = df['Change'].rank(pct=True, ascending=False)
     df['Volume_Score'] = df['Volume'].rank(pct=True, ascending=False)
-
-    # Combine scores into an overall rating
     df['Overall Rating'] = ((df['Valuation_Score'] + df['Momentum_Score'] + df['Volume_Score']) / 3).round(2)
-
     return df
+
 # --- Fetch Data ---
 @st.cache_data(ttl=3600)
 def fetch_data_from_finviz(pages=1):
     headers = {"User-Agent": "Mozilla/5.0"}
     base_url = "https://finviz.com/screener.ashx?v=111&f=idx_sp500"
-    
     all_data = []
 
     for page in range(pages):
         url = f"{base_url}&r={page * 20 + 1}"
         res = requests.get(url, headers=headers)
         soup = BeautifulSoup(res.content, "html.parser")
-
         table = soup.find("table", class_="screener-view-table")
-        rows = table.find_all("tr")[1:]
 
+        if table is None:
+            st.error("❌ Finviz table not found. The site may have changed or blocked scraping.")
+            st.stop()
+
+        rows = table.find_all("tr")[1:]
         for row in rows:
             cols = [td.text.strip() for td in row.find_all("td")]
             if cols:
@@ -52,52 +49,39 @@ def fetch_data_from_finviz(pages=1):
 
     df = pd.DataFrame(all_data, columns=columns)
     if df.empty:
-       st.error("❌ No data fetched from Finviz. The site may have blocked scraping.")
-       st.stop()
+        st.error("❌ No data fetched from Finviz.")
+        st.stop()
     return df
 
 # --- Title ---
 st.title("📊 Automated Fundamental Analysis")
-
 st.markdown("""
-Analyze **8,000+ stocks** based on valuation, profitability, growth, and price performance—**relative to their sector**.
-
-Data Source: Finviz  
-Dataset: `StockRatings-04.05.22.csv`
+Analyze **S&P 500 stocks** based on valuation, growth, and momentum — **relative to their sector**.
 """)
 
-# --- Refresh button ---
+# --- Refresh ---
 if st.button("🔄 Refresh Live Data"):
     st.cache_data.clear()
     st.experimental_rerun()
 
-# --- Load Data ---
+# --- Load + Process Data ---
 try:
-    df = fetch_data_from_finviz(pages=5)  # Loads 40 stocks (2 pages)
-    df = compute_overall_rating(df)       # Compute rating
+    df = fetch_data_from_finviz(pages=5)
+    df = compute_overall_rating(df)
+    df['Ticker'] = df['Ticker'].str.strip().str.upper()
 except Exception as e:
     st.error(f"❌ Failed to fetch data from Finviz:\n\n{e}")
     st.stop()
 
-# --- Sidebar Columns ---
+# --- Sidebar ---
 st.sidebar.subheader("📋 Available Columns")
 st.sidebar.write(df.columns.tolist())
 
 available_metrics = ['P/E', 'Price', 'Change', 'Volume', 'Overall Rating']
 
-# --- Validate Required Columns ---
-required_cols = ['Ticker', 'Company', 'Price', 'Market Cap', 'Sector', 'Industry', 'Overall Rating']
-missing = [col for col in required_cols if col not in df.columns]
-if missing:
-    st.error(f"❌ Missing required columns: {missing}")
-    st.write("Columns in DataFrame:", df.columns.tolist())  # Debug help
-    st.stop()
-
 # --- Ticker Analysis ---
 st.header("🔍 Ticker Lookup")
-df['Ticker'] = df['Ticker'].str.strip().str.upper()  # Clean first
-ticker = st.selectbox("Select a Ticker", df['Ticker'].unique())  # Then use
-st.sidebar.text("Tickers:\n" + "\n".join(df['Ticker'].dropna().unique().tolist()))
+ticker = st.selectbox("Select a Ticker", df['Ticker'].unique())
 if ticker in df['Ticker'].values:
     stock = df[df['Ticker'] == ticker].iloc[0]
 
@@ -111,7 +95,7 @@ if ticker in df['Ticker'].values:
     col4.metric("Sector", stock['Sector'])
     col5.metric("Industry", stock['Industry'])
 
-    # Analysis block
+    # Metric Analysis
     st.markdown("### 📈 Analyze a Metric")
     selected_metric = st.selectbox("Pick a metric to analyze", available_metrics)
     analysis_scope = st.radio("Analyze by", ["Sector", "Industry"])
@@ -124,7 +108,6 @@ if ticker in df['Ticker'].values:
     ax.set_title(f"{selected_metric} Distribution in {group} {analysis_scope}")
     ax.legend()
     st.pyplot(fig)
-
 else:
     st.warning("Ticker not found in dataset.")
 
@@ -133,7 +116,6 @@ st.markdown("---")
 st.header("🏆 Compare Sectors")
 
 sectors = sorted(df['Sector'].dropna().unique().tolist())
-
 if len(sectors) >= 2:
     sector1 = st.selectbox("Select Sector", sectors)
     sector2 = st.selectbox("Select a Sector to Compare", sectors, index=1 if sectors[0] == sector1 else 0)
@@ -151,22 +133,13 @@ if len(sectors) >= 2:
     st.pyplot(fig2)
 
 elif len(sectors) == 1:
-    st.info("Only one sector available in the data. Sector comparison is not possible.")
+    st.info("Only one sector available.")
 else:
-    st.warning("⚠️ No sector data available.")
+    st.warning("⚠️ No sector data found.")
 
 # --- Grading System ---
 st.markdown("---")
 st.header("📘 Grading System")
-
-st.markdown("""
-The grading system compares a stock's metric within its **sector or industry** and calculates:
-
-- 📊 Mean of the group  
-- 🏁 90th Percentile  
-- 📉 Change = (Std. Dev / 3)
-""")
-
 grading_metric = st.selectbox("Select Metric for Grading Breakdown", available_metrics, key="grading")
 grading_scope = st.radio("Grading Scope", ["Sector", "Industry"], horizontal=True)
 
@@ -183,7 +156,6 @@ if ticker in df['Ticker'].values and grading_metric in df.columns:
 
     raw_values = grading_df[grading_metric].dropna()
 
-    # Convert grades if needed
     if raw_values.dtype == 'object':
         values = raw_values.map(grade_map)
         stock_val = grade_map.get(stock[grading_metric], None)
