@@ -49,10 +49,11 @@ def compute_overall_rating(df):
     return df
 
 # --- Page Setup ---
-st.set_page_config(page_title="📊 Automated Fundamental Analysis", layout="wide")
+st.set_page_config(page_title="⚡ StockSpark", layout="wide")
 
-st.title("📊 Automated Fundamental Analysis")
-st.markdown("💹 **With tariffs shaking up the market, it's the perfect time to compare top S&P 500 stocks — by value, growth, and momentum.**")
+st.title("⚡ StockSpark")
+st.markdown("Designed by Nikhil Konda — for anyone who wants to invest with clarity.
+Explore, compare, and score top S&P 500 stocks in seconds."**")
 
 # --- Refresh Button ---
 if st.button("🔄 Refresh Live Data"):
