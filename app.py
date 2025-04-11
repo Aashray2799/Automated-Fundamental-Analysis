@@ -93,6 +93,7 @@ if missing:
 # --- Ticker Analysis ---
 st.header("🔍 Ticker Lookup")
 ticker = st.text_input("Enter a Ticker Symbol", value="AAPL").upper()
+df['Ticker'] = df['Ticker'].str.strip().str.upper()
 
 if ticker in df['Ticker'].values:
     stock = df[df['Ticker'] == ticker].iloc[0]
